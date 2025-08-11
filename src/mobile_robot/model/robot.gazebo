@@ -5,25 +5,21 @@
 <gazebo reference ="body_link">
     <mu1>0.2</mu1>
     <mu2>0.2</mu2>
-    <material>Gazebo/Red </material>
 </gazebo>
 
 <gazebo reference ="wheel1_link">
     <mu1>0.2</mu1>
     <mu2>0.2</mu2>
-    <material>Gazebo/Yellow </material>
 </gazebo>
 
 <gazebo reference ="wheel2_link">
     <mu1>0.2</mu1>
     <mu2>0.2</mu2>
-    <material>Gazebo/Yellow </material>
 </gazebo>
 
 <gazebo reference ="caster_link">
     <mu1>0.000002</mu1>
     <mu2>0.000002</mu2>
-    <material>Gazebo/Blue </material>
 </gazebo>
 
 
@@ -42,7 +38,7 @@
     <tf_topic>/tf</tf_topic>
     <odom_topic>odom</odom_topic>
     <frame_id>odom</frame_id>
-    <child_frame_id> base_footprint</child_frame_id>
+    <child_frame_id>base_footprint</child_frame_id>
     <odom_publisher_frequency>30</odom_publisher_frequency>
 </plugin>
 
@@ -64,8 +60,8 @@
 <gazebo reference ="lidar_link">
     <sensor name="gpu_lidar" type="gpu_lidar">
         <pose relative_to='lidar_link'>0 0 0 0 0 0</pose>
-        <topic> scan </topic>
-        <update_rate>1</update_rate>
+        <topic>scan</topic>
+        <update_rate>10</update_rate>
 
         <lidar>
             <scan>
@@ -92,6 +88,60 @@
 
         <always_on>1</always_on>
         <visualize>1</visualize>
+    </sensor>
+</gazebo>
+
+<gazebo reference="camera_link">
+    <material>
+        <ambient>0 0 1 1</ambient>
+        <diffuse>0 0 1 1</diffuse>
+        <specular>0.1 0.1 0.1 1</specular>
+    </material>
+    <sensor name="camera_sensor" type="camera">
+        <topic>camera</topic>
+        <update_rate>30.0</update_rate>
+        <camera>
+            <horizontal_fov>1.089</horizontal_fov>
+            <image>
+                <width>640</width>
+                <height>480</height>
+                <format>R8G8B8</format>
+            </image>
+            <clip>
+                <near>0.02</near>
+                <far>300</far>
+            </clip>
+            <noise>
+                <type>gaussian</type>
+                <mean>0.0</mean>
+                <stddev>0.007</stddev>
+            </noise>
+        </camera>
+        <always_on>1</always_on>
+        <visualize>true</visualize>
+        </sensor>
+</gazebo>
+
+<gazebo reference="imu_link">
+    <material>
+        <ambient>0 0 1 1</ambient>
+        <diffuse>0 0 1 1</diffuse>
+        <specular>0.1 0.1 0.1 1</specular>
+    </material>
+    <sensor name="imu_sensor" type="imu">
+        <topic>imu</topic>
+        <update_rate>100</update_rate>
+        <always_on>1</always_on>
+        <visualize>true</visualize>
+        <plugin filename="gz-sim-imu-system"
+                name="gz::sim::systems::Imu">
+            <topic>/imu</topic>
+            <frame_id>imu_link</frame_id>
+            <always_on>1</always_on>
+            <gaussian_noise>0.0017</gaussian_noise>
+            <xyz_offset>0 0 0</xyz_offset>
+            <rpy_offset>0 0 0</rpy_offset>
+        </plugin>
     </sensor>
 </gazebo>
 

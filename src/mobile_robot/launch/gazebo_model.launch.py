@@ -40,14 +40,30 @@ def generate_launch_description():
         output='screen',
     )
 
+    frameFixNode = Node(
+        package=namePackage,
+        executable='frame_fix_node',
+        name='frame_fix_node',
+        output='screen'
+    )
+
+    start_rviz2 = Node(
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        output='screen',
+        arguments=['-d', os.path.join(get_package_share_directory(namePackage), 'config', 'mobile_robot_2dlidar.rviz')],
+        remappings=[('/scan', '/fixed_scan')]
+    )
+
     launchDescriptionObject = LaunchDescription()
 
     launchDescriptionObject.add_action(gazeboLaunch)
-
-
     launchDescriptionObject.add_action(spawnModelNodeGazebo)
     launchDescriptionObject.add_action(nodeRobotStatePublisher)
     launchDescriptionObject.add_action(start_gazebo_ros_bridge_cmd)
+    launchDescriptionObject.add_action(frameFixNode)
+    launchDescriptionObject.add_action(start_rviz2)
 
     return launchDescriptionObject
 
