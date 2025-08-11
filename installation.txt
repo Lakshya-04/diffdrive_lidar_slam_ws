@@ -1,0 +1,14 @@
+sudo apt install ros-jazzy-joint-state-publisher ros-jazzy-joint-state-publisher-gui ros-jazzy-xacro ros-jazzy-ros-gz
+
+sudo apt-get install ros-jazzy-teleop-twist-keyboard
+
+mkdir -p diff_drive_ws/src
+
+cd diff_drive_ws/src/
+
+ros2 pkg create mobile_robot --build-type ament_python 
+
+cd mobile_robot
+
+mkdir launch model parameters
+
