@@ -27,6 +27,7 @@ setup(
     entry_points={
         'console_scripts': [
             'frame_fix_node = mobile_robot.frame_fix_node:main',
+            'odom_to_path_node = mobile_robot.odom_to_path:main',
         ],
     },
 )

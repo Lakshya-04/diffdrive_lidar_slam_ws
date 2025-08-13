@@ -26,3 +26,9 @@ mkdir -p ~/ros2_ws/src
 cd ~/ros2_ws/src
 git clone https://github.com/YOUR_USERNAME/my_diffdrive_lidar_sim.git
 
+
+References:
+https://github.com/MOGI-ROS/Week-5-6-Gazebo-sensors/tree/main
+https://medium.com/@alitekes1/gazebo-sim-plugin-and-sensors-for-acquire-data-from-simulation-environment-681d8e2ad853
+https://www.youtube.com/watch?v=wOa1m8hzrgQ
+

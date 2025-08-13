@@ -16,11 +16,11 @@
   gz_type_name: "gz.msgs.Odometry"
   direction: GZ_TO_ROS
 
-- ros_topic_name: "tf"
-  gz_topic_name: "tf"
-  ros_type_name: "tf2_msgs/msg/TFMessage"
-  gz_type_name: "gz.msgs.Pose_V"
-  direction: GZ_TO_ROS
+# - ros_topic_name: "tf"
+#   gz_topic_name: "tf"
+#   ros_type_name: "tf2_msgs/msg/TFMessage"
+#   gz_type_name: "gz.msgs.Pose_V"
+#   direction: GZ_TO_ROS
 
 - ros_topic_name: "cmd_vel"
   gz_topic_name: "cmd_vel"
@@ -55,3 +55,40 @@
   gz_type_name: "gz.msgs.IMU"
   direction: GZ_TO_ROS
   lazy: false
+
+- ros_topic_name: "rgb/image_raw"
+  gz_topic_name: "/rgbd_camera_sensor/image"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "gz.msgs.Image"
+  direction: GZ_TO_ROS
+  qos:
+    reliability: reliable
+    durability: transient_local
+
+- ros_topic_name: "rgb/camera_info"
+  gz_topic_name: "/rgbd_camera_sensor/camera_info"
+  ros_type_name: "sensor_msgs/msg/CameraInfo"
+  gz_type_name: "gz.msgs.CameraInfo"
+  direction: GZ_TO_ROS
+  qos:
+    reliability: reliable
+    durability: transient_local
+
+- ros_topic_name: "depth/image_raw"
+  gz_topic_name: "/rgbd_camera_sensor/depth_image"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "gz.msgs.Image"
+  direction: GZ_TO_ROS
+  qos:
+    reliability: reliable
+    durability: transient_local
+
+- ros_topic_name: "depth/camera_info"
+  gz_topic_name: "/rgbd_camera_sensor/camera_info"
+  ros_type_name: "sensor_msgs/msg/CameraInfo"
+  gz_type_name: "gz.msgs.CameraInfo"
+  direction: GZ_TO_ROS
+  qos:
+    reliability: reliable
+    durability: transient_local
+
