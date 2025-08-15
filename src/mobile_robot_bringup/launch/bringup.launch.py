@@ -83,6 +83,14 @@ def generate_launch_description():
         remappings=[('/scan', '/fixed_scan')]
     )
 
+    # Interactive Marker Twist
+    interactive_marker_twist_node = Node(
+            package='mobile_robot_utils',
+            executable='interactive_marker_twist',
+            name='interactive_marker_twist_server',
+            output='screen'
+        )
+
     return LaunchDescription([
         gazebo_launch,
         spawn_model_node,
@@ -91,5 +99,6 @@ def generate_launch_description():
         ekf_node,
         frame_fix_node,
         odom_to_path_node,
-        rviz2_node
+        rviz2_node,
+        interactive_marker_twist_node
     ])

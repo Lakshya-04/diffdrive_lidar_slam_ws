@@ -23,6 +23,7 @@ setup(
             'marker_twist_server = mobile_robot_utils.marker_twist_server:main',
             'frame_fix_node = mobile_robot_utils.frame_fix_node:main',
             'odom_to_path_node = mobile_robot_utils.odom_to_path:main',
+            'interactive_marker_twist = mobile_robot_utils.interactive_marker_twist:main',
         ],
     },
 )
