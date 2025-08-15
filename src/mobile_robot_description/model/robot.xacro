@@ -63,7 +63,7 @@
   </inertial>
 </xacro:macro>
 
-<xacro:include filename="$(find mobile_robot)/model/robot.gazebo" />
+<xacro:include filename="$(find mobile_robot_description)/model/robot.gazebo" />
 
 <!-- Links and Joints -->
 <!-- Base link -->
