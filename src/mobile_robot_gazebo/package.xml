@@ -12,7 +12,12 @@
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
 
-  <exec_depend>gazebo_ros</exec_depend>
+  <!-- <exec_depend>gazebo_ros</exec_depend> -->
+  <!-- <depend>gazebo_ros_pkgs</depend> -->
+  
+  <depend>ros_gz_sim</depend>
+  <depend>ros_gz_bridge</depend>
+
   <exec_depend>mobile_robot_description</exec_depend>
 
   <export>

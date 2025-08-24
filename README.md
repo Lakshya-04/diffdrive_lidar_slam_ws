@@ -21,7 +21,6 @@ This project demonstrates a complete robotics software pipeline, from low-level 
 -   **🧭 Autonomous Navigation**: Full navigation and path planning using the **Nav2** stack.
 -   **🕹️ Interactive Control**: Real-time robot control in RViz using an interactive marker.
 -   **🧱 Modular & Extendable**: The project is organized into distinct ROS 2 packages, making it easy to modify, extend, or integrate with other projects.
-
 ---
 
 ## 📂 Project Structure
@@ -162,4 +161,54 @@ This project is an active endeavor with several planned enhancements:
     -   Create a hardware interface package (`mobile_robot_hw`) to allow the same software stack to run on a physical differential drive robot.
 -   **[Planned] CI/CD Pipeline**:
     -   Set up a GitHub Actions workflow to automate building and testing on every push, ensuring code quality and reliability.
+
+---
+
+## 🐳 Docker Deployment
+
+For a consistent and hassle-free setup, you can use the provided `Dockerfile` to build and run the entire simulation in a container. This method handles all dependencies and configurations automatically.
+
+Installing docker
+huh@huh-Legion-5-15IMH6:~/diff_drive_ws$ sudo usermod -aG docker ${USER}
+huh@huh-Legion-5-15IMH6:~/diff_drive_ws$ newgrp docker
+
+### 1. Build the Docker Image
+
+From the root of the workspace (`diff_drive_ws`), run the following command to build the Docker image.
+
+```bash
+docker build -t ros2_diff_drive .
+```
+
+### 2. Run the Docker Container
+
+To run GUI applications like Gazebo and RViz from within the container, you need to share your host's display with the container.
+
+**First, allow local connections to your X server (run this once per session on your host machine):**
+```bash
+xhost +local:docker
+```
+
+**Now, run the container:**
+```bash
+docker run -it --rm \
+    --privileged \
+    --net=host \
+    -e DISPLAY=$DISPLAY \
+    -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
+    ros2_diff_drive
+```
+-   `--privileged` and the `-v` volume mount are for GUI forwarding.
+-   `--net=host` ensures seamless network communication for ROS 2 nodes.
+-   You will now be inside the container's `bash` shell, with the ROS 2 environment ready to go.
+
+### 3. Launch the Simulation from Docker
+
+Once inside the container, you can run any of the launch commands as you would normally. For example, to launch SLAM:
+
+```bash
+ros2 launch mobile_robot_bringup bringup.launch.py
+```
+
+Gazebo and RViz2 windows will appear on your host machine, allowing you to interact with the simulation as if you were running it natively.
 
