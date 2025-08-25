@@ -1,28 +1,59 @@
 import os
 import xacro
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, TextSubstitution
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 
+
 def generate_launch_description():
-    # Paths
+    # Arguments
+    world_arg = DeclareLaunchArgument(
+        'world',
+        default_value='ground.sdf',
+        description='World file name (must exist in mobile_robot_gazebo/worlds/ folder)'
+    )
+    
+    use_rviz_arg = DeclareLaunchArgument(
+        'use_rviz',
+        default_value='true',
+        description='Start RViz2'
+    )
+    
+    gui_arg = DeclareLaunchArgument(
+        'gui',
+        default_value='true',
+        description='Start Gazebo GUI'
+    )
+
+    # Package paths
     description_pkg = get_package_share_directory('mobile_robot_description')
     gazebo_pkg = get_package_share_directory('mobile_robot_gazebo')
-    utils_pkg = get_package_share_directory('mobile_robot_utils')
-
+    bringup_pkg = get_package_share_directory('mobile_robot_bringup')
+    
+    # File paths
     model_path = os.path.join(description_pkg, 'model', 'robot.xacro')
     robot_description = xacro.process_file(model_path).toxml()
-
+    
     bridge_params_path = os.path.join(gazebo_pkg, 'config', 'bridge_parameters.yaml')
-    ekf_params_path = os.path.join(get_package_share_directory('mobile_robot_bringup'), 'config', 'ekf.yaml')
-    # rviz_config_path = os.path.join(get_package_share_directory('mobile_robot_bringup'), 'config', 'mobile_robot_2dlidar.rviz')
-    rviz_config_path = os.path.join(get_package_share_directory('mobile_robot_bringup'), 'config', 'mobile_robot_depth.rviz')
+    ekf_params_path = os.path.join(bringup_pkg, 'config', 'ekf.yaml')
+    rviz_config_path = os.path.join(bringup_pkg, 'config', 'mobile_robot_depth.rviz')
+    
+    # World file path - correctly reference the gazebo package
+    world_file = PathJoinSubstitution([gazebo_pkg, 'worlds', LaunchConfiguration('world')])
 
-    # Gazebo
+    # Gazebo launch
     gazebo_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(gazebo_pkg, 'launch', 'gazebo_sim.launch.py'))
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')
+        ),
+        launch_arguments={
+            'gz_args': ['-r ', world_file],
+            'on_exit_shutdown': 'true'
+        }.items()
     )
 
     # Spawn robot
@@ -80,18 +111,22 @@ def generate_launch_description():
         name='rviz2',
         output='screen',
         arguments=['-d', rviz_config_path],
-        remappings=[('/scan', '/fixed_scan')]
+        remappings=[('/scan', '/fixed_scan')],
+        condition=IfCondition(LaunchConfiguration('use_rviz'))
     )
 
     # Interactive Marker Twist
     interactive_marker_twist_node = Node(
-            package='mobile_robot_utils',
-            executable='interactive_marker_twist',
-            name='interactive_marker_twist_server',
-            output='screen'
-        )
+        package='mobile_robot_utils',
+        executable='interactive_marker_twist',
+        name='interactive_marker_twist_server',
+        output='screen'
+    )
 
     return LaunchDescription([
+        world_arg,
+        use_rviz_arg,
+        gui_arg,
         gazebo_launch,
         spawn_model_node,
         robot_state_publisher_node,
