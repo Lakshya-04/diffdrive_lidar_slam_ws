@@ -4,7 +4,7 @@ This repository contains a comprehensive simulation for a differential drive mob
 
 This project demonstrates a complete robotics software pipeline, from low-level robot modeling and simulation to high-level SLAM and autonomous navigation.
 
-![Robot Simulation in Gazebo with RViz](docs/images/sim_preview.png)
+![Robot Simulation in Gazebo with RViz](docs/images/sim_preview.gif)
 *(A preview of the robot navigating in a simulated environment while building a map in RViz2)*
 
 ---

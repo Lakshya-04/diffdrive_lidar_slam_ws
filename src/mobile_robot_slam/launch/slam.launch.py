@@ -167,10 +167,11 @@ def generate_launch_description():
 # Launch
 # ros2 launch mobile_robot_bringup bringup.launch.py
 
+# ros2 launch mobile_robot_slam slam.launch.py 
+
 # # Activate the current sync node 
 # ros2 service call /slam_toolbox/change_state lifecycle_msgs/srv/ChangeState "{transition: {id: 1}}"
 # ros2 service call /slam_toolbox/change_state lifecycle_msgs/srv/ChangeState "{transition: {id: 3}}"
 
 
-# ros2 launch mobile_robot_slam slam.launch.py 
 
