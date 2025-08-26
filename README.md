@@ -145,25 +145,6 @@ This project is designed to be easily configurable.
 
 ---
 
-## 📈 Future Prospects & Work in Progress
-
-This project is an active endeavor with several planned enhancements:
-
--   **[In Progress] Advanced Sensor Integration**:
-    -   Integrate a 3D LiDAR for more detailed environmental perception.
-    -   Implement visual SLAM using the RGB-D camera.
--   **[Planned] Multi-Robot Simulation**:
-    -   Develop a launch system to spawn multiple robots in the same environment.
-    -   Implement a basic multi-robot communication and coordination system.
--   **[Planned] Behavior Tree Development**:
-    -   Create custom behavior tree nodes in Nav2 for complex tasks (e.g., "inspect object," "patrol area").
--   **[Planned] Physical Robot Integration**:
-    -   Create a hardware interface package (`mobile_robot_hw`) to allow the same software stack to run on a physical differential drive robot.
--   **[Planned] CI/CD Pipeline**:
-    -   Set up a GitHub Actions workflow to automate building and testing on every push, ensuring code quality and reliability.
-
----
-
 ## 🐳 Docker Deployment
 
 For a consistent and hassle-free setup, you can use the provided `Dockerfile` to build and run the entire simulation in a container. This method handles all dependencies and configurations automatically.
@@ -211,4 +192,25 @@ ros2 launch mobile_robot_bringup bringup.launch.py
 ```
 
 Gazebo and RViz2 windows will appear on your host machine, allowing you to interact with the simulation as if you were running it natively.
+
+
+## 📈 Future Prospects & Work in Progress
+
+This project is an active endeavor with several planned enhancements:
+
+-   **[In Progress] Advanced Sensor Integration**:
+    -   Integrate a 3D LiDAR for more detailed environmental perception.
+    -   Implement visual SLAM using the RGB-D camera.
+-   **[Planned] Multi-Robot Simulation**:
+    -   Develop a launch system to spawn multiple robots in the same environment.
+    -   Implement a basic multi-robot communication and coordination system.
+-   **[Planned] Behavior Tree Development**:
+    -   Create custom behavior tree nodes in Nav2 for complex tasks (e.g., "inspect object," "patrol area").
+-   **[Planned] Physical Robot Integration**:
+    -   Create a hardware interface package (`mobile_robot_hw`) to allow the same software stack to run on a physical differential drive robot.
+-   **[Planned] CI/CD Pipeline**:
+    -   Set up a GitHub Actions workflow to automate building and testing on every push, ensuring code quality and reliability.
+
+---
+
 
