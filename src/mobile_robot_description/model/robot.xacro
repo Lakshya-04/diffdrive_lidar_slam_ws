@@ -17,11 +17,16 @@
 <xacro:property name ="s4" value="${c/2+d/2}" />
 
 <xacro:property name="d1" value="2710.0" />
-<xacro:property name="d2" value="2710.0" />
-<xacro:property name="d3" value="2710.0" />
+<!-- <xacro:property name="d1" value="1" /> -->
 
-<xacro:property name="m1" value="${d1*a*b*c}" />
-<xacro:property name="m2" value="${d2*pi_const*r*r*d}" />
+<xacro:property name="d2" value="2710.0" />
+<!-- <xacro:property name="d2" value="1 "/> -->
+
+<xacro:property name="d3" value="2710.0" />
+<!-- <xacro:property name="d3" value="1" /> -->
+
+<xacro:property name="m1" value="${d1*a*b*c}" /> <!-- Body Mass 500g-->
+<xacro:property name="m2" value="${d2*pi_const*r*r*d}" /> 
 <xacro:property name ="m3" value="${d3*(4.0/3.0)*pi_const*r*r*r}" />
 
 <!-- Robot Body Inertia -->
@@ -101,7 +106,7 @@
   <origin rpy="0 0 0" xyz="${-s2} ${-s4} ${r}" />
   <axis xyz=" 0 1 0" />
   <limit effort = " 50000" velocity = "10" />
-  <dynamics damping = "1.0" friction ="1.0" />
+  <!-- <dynamics damping = "1.0" friction ="1.0" /> -->
 </joint>
 
 <link name="wheel1_link">
@@ -132,7 +137,7 @@
   <origin rpy="0 0 0" xyz="${-s2} ${s4} ${r}" />
   <axis xyz=" 0 1 0" />
   <limit effort = " 50000" velocity = "10" />
-  <dynamics damping = "1.0" friction ="1.0" />
+  <!-- <dynamics damping = "1.0" friction ="1.0" /> -->
 </joint>
 
 <link name="wheel2_link">
