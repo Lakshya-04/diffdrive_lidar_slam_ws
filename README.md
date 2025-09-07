@@ -1,4 +1,4 @@
-# Advanced ROS 2 Mobile Robot Simulation
+# Modular ROS 2 Mobile Robot Simulation
 
 This repository contains a comprehensive simulation for a differential drive mobile robot, built on **ROS 2 Jazzy** and **Gazebo Harmonic**. It serves as a robust foundation for developing and testing robotics algorithms, featuring a full navigation stack, multiple sensors, and a modular structure designed for easy expansion.
 

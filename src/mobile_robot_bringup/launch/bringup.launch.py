@@ -2,19 +2,31 @@ import os
 import xacro
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
-from launch.conditions import IfCondition
+from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, TextSubstitution
+from launch.substitutions import LaunchConfiguration, PythonExpression, PathJoinSubstitution, TextSubstitution
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 
 
 def generate_launch_description():
-    # Arguments
+    # Enhanced Arguments
     world_arg = DeclareLaunchArgument(
         'world',
         default_value='ground.sdf',
         description='World file name (must exist in mobile_robot_gazebo/worlds/ folder)'
+    )
+    
+    lidar_type_arg = DeclareLaunchArgument(
+        'lidar_type',
+        default_value='2d',
+        description='LiDAR type: 2d, 3d, or depth'
+    )
+    
+    use_rgbd_arg = DeclareLaunchArgument(
+        'use_rgbd',
+        default_value='true',
+        description='Enable RGBD camera'
     )
     
     use_rviz_arg = DeclareLaunchArgument(
@@ -40,10 +52,13 @@ def generate_launch_description():
     
     bridge_params_path = os.path.join(gazebo_pkg, 'config', 'bridge_parameters.yaml')
     ekf_params_path = os.path.join(bringup_pkg, 'config', 'ekf.yaml')
-    # rviz_config_path = os.path.join(bringup_pkg, 'config', 'mobile_robot_depth.rviz')
-    rviz_config_path = os.path.join(bringup_pkg, 'config', 'mobile_robot_2dlidar.rviz')
     
-    # World file path - correctly reference the gazebo package
+    # Dynamic RViz configs
+    rviz_config_2d = os.path.join(bringup_pkg, 'config', 'mobile_robot_2dlidar.rviz')
+    rviz_config_3d = os.path.join(bringup_pkg, 'config', 'mobile_robot_3dlidar.rviz')
+    rviz_config_depth = os.path.join(bringup_pkg, 'config', 'mobile_robot_depth.rviz')
+    
+    # World file path
     world_file = PathJoinSubstitution([gazebo_pkg, 'worlds', LaunchConfiguration('world')])
 
     # Gazebo launch
@@ -57,7 +72,7 @@ def generate_launch_description():
         }.items()
     )
 
-    # Spawn robot
+    # Robot nodes
     spawn_model_node = Node(
         package='ros_gz_sim',
         executable='create',
@@ -65,7 +80,6 @@ def generate_launch_description():
         output='screen'
     )
 
-    # Robot State Publisher
     robot_state_publisher_node = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
@@ -73,7 +87,6 @@ def generate_launch_description():
         parameters=[{'robot_description': robot_description, 'use_sim_time': True}]
     )
 
-    # Bridge
     bridge_node = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -81,7 +94,6 @@ def generate_launch_description():
         output='screen'
     )
 
-    # EKF
     ekf_node = Node(
         package='robot_localization',
         executable='ekf_node',
@@ -90,7 +102,7 @@ def generate_launch_description():
         parameters=[ekf_params_path, {'use_sim_time': True}]
     )
 
-    # Utils
+    # Conditional nodes based on sensor configuration
     frame_fix_node = Node(
         package='mobile_robot_utils',
         executable='frame_fix_node',
@@ -105,27 +117,60 @@ def generate_launch_description():
         output='screen'
     )
 
+    # Static transforms for different sensors
     depth_camera_tf_node = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
         name='depth_camera_tf',
         arguments=['0', '0', '0', '0', '0', '0', 
-                'depth_camera_link', 'diff_drive_robot/base_footprint/rgbd_camera_sensor'],
-        output='screen'
+                  'depth_camera_link', 'diff_drive_robot/base_footprint/rgbd_camera_sensor'],
+        output='screen',
+        condition=IfCondition(LaunchConfiguration('use_rgbd'))
     )
 
-    # RViz
-    rviz2_node = Node(
+    # RViz configurations - select config based on lidar_type
+    rviz2_node_2d = Node(
         package='rviz2',
         executable='rviz2',
         name='rviz2',
         output='screen',
-        arguments=['-d', rviz_config_path],
+        arguments=['-d', rviz_config_2d],
         remappings=[('/scan', '/fixed_scan')],
-        condition=IfCondition(LaunchConfiguration('use_rviz'))
+        condition=IfCondition(PythonExpression(["'", LaunchConfiguration('lidar_type'), "' == '2d'"]))
+    )
+    rviz2_node_3d = Node(
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        output='screen',
+        arguments=['-d', rviz_config_3d],
+        remappings=[('/scan', '/fixed_scan')],
+        condition=IfCondition(PythonExpression(["'", LaunchConfiguration('lidar_type'), "' == '3d'"]))
+    )
+    rviz2_node_depth = Node(
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        output='screen',
+        arguments=['-d', rviz_config_depth],
+        remappings=[('/scan', '/fixed_scan')],
+        condition=IfCondition(PythonExpression(["'", LaunchConfiguration('lidar_type'), "' == 'depth'"]))
     )
 
-    # Interactive Marker Twist
+    # 3D LiDAR static transform only if lidar_type is 3d or depth
+    lidar_3d_tf_node = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='lidar_3d_tf',
+        arguments=['0', '0', '0', '0', '0', '0',
+                  'lidar_3d_link', 'diff_drive_robot/base_footprint/gpu_lidar_3d'],
+        output='screen',
+        condition=IfCondition(PythonExpression([
+            "('", LaunchConfiguration('lidar_type'), "' == '3d') or ('", LaunchConfiguration('lidar_type'), "' == 'depth')"
+        ]))
+    )
+
+    # Interactive Marker
     interactive_marker_twist_node = Node(
         package='mobile_robot_utils',
         executable='interactive_marker_twist',
@@ -135,6 +180,8 @@ def generate_launch_description():
 
     return LaunchDescription([
         world_arg,
+        lidar_type_arg,
+        use_rgbd_arg,
         use_rviz_arg,
         gui_arg,
         gazebo_launch,
@@ -144,7 +191,10 @@ def generate_launch_description():
         ekf_node,
         frame_fix_node,
         depth_camera_tf_node,
+        lidar_3d_tf_node,
         odom_to_path_node,
-        rviz2_node,
+        rviz2_node_2d,
+        rviz2_node_3d,
+        rviz2_node_depth,
         interactive_marker_twist_node
     ])

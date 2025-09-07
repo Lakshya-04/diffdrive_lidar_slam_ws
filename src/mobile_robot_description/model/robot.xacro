@@ -299,12 +299,45 @@
   </inertial>
 </link>
 
-
 <!-- Joint to connect depth camera -->
 <joint name="depth_camera_joint" type="fixed">
   <parent link="camera_link"/> <!-- Attach to the regular camera -->
   <child link="depth_camera_link"/>
   <origin xyz="0 0 0.1" rpy="0 0 0"/> <!-- Slightly above the regular camera -->
 </joint>
+
+<!-- 3D LiDAR -->
+<joint name="lidar_3d_joint" type="fixed">
+  <origin rpy="0 0 0" xyz="0 0 ${b+r+0.15}" />
+  <parent link="body_link" />
+  <child link="lidar_3d_link" />
+  <axis xyz="0 1 0" rpy="0 0 0" />
+</joint>
+
+<link name="lidar_3d_link">
+  <visual>
+    <geometry>
+      <cylinder radius="0.05" length="0.08" />
+    </geometry>
+    <material name="Black">
+      <color rgba="0.2 0.2 0.2 1"/>
+    </material>
+    <origin rpy="0 0 0" xyz="0 0 0.04" />
+  </visual>
+
+  <collision>
+    <geometry>
+      <cylinder radius="0.05" length="0.08" />
+    </geometry>
+    <origin rpy="0 0 0" xyz="0 0 0.04" />
+  </collision>
+
+  <inertial>
+    <origin rpy="0 0 0" xyz="0 0 0" />
+    <mass value="0.5" />
+    <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001" />
+  </inertial>
+</link>
+
 
 </robot>

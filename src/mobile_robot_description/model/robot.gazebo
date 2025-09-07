@@ -168,6 +168,51 @@
   </sensor>
 </gazebo>
 
+<!-- 3D LiDAR Sensor -->
+<gazebo reference="lidar_3d_link">
+  <sensor name="gpu_lidar_3d" type="gpu_lidar">
+    <pose relative_to='lidar_3d_link'>0 0 0 0 0 0</pose>
+    <topic>scan_3d</topic>
+    <update_rate>10</update_rate>
+
+    <lidar>
+      <scan>
+        <!-- Horizontal scan -->
+        <horizontal>
+          <samples>1800</samples>        <!-- High resolution -->
+          <resolution>1</resolution>
+          <min_angle>-3.14159</min_angle> <!-- Full 360° -->
+          <max_angle>3.14159</max_angle>
+        </horizontal>
+        
+        <!-- Vertical scan for 3D -->
+        <vertical>
+          <samples>32</samples>          <!-- 32 vertical layers -->
+          <resolution>1</resolution>
+          <min_angle>-0.26180</min_angle> <!-- -15 degrees -->
+          <max_angle>0.17453</max_angle>  <!-- +10 degrees -->
+        </vertical>
+      </scan>
+
+      <range>
+        <min>0.08</min>
+        <max>100.0</max>
+        <resolution>0.01</resolution>
+      </range>
+
+      <noise>
+        <type>gaussian</type>
+        <mean>0.0</mean>
+        <stddev>0.01</stddev>
+      </noise>
+    </lidar>
+
+    <always_on>1</always_on>
+    <visualize>1</visualize>
+  </sensor>
+</gazebo>
+
+
 
 
 </robot>
