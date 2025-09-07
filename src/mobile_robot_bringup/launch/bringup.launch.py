@@ -105,6 +105,15 @@ def generate_launch_description():
         output='screen'
     )
 
+    depth_camera_tf_node = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='depth_camera_tf',
+        arguments=['0', '0', '0', '0', '0', '0', 
+                'depth_camera_link', 'diff_drive_robot/base_footprint/rgbd_camera_sensor'],
+        output='screen'
+    )
+
     # RViz
     rviz2_node = Node(
         package='rviz2',
@@ -134,6 +143,7 @@ def generate_launch_description():
         bridge_node,
         ekf_node,
         frame_fix_node,
+        depth_camera_tf_node,
         odom_to_path_node,
         rviz2_node,
         interactive_marker_twist_node

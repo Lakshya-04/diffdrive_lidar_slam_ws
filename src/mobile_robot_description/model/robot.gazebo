@@ -147,12 +147,12 @@
 
 <gazebo reference="depth_camera_link">
   <sensor name="rgbd_camera_sensor" type="rgbd_camera">
-  <topic>/rgbd_camera_sensor</topic>
-    <update_rate>30</update_rate>
-    <visualize>true</visualize>
     <always_on>true</always_on>
-
-    <camera name="rgb">
+    <update_rate>30.0</update_rate>
+    <visualize>true</visualize>
+    <topic>rgbd_camera_sensor</topic>
+    
+    <camera name="camera">
       <horizontal_fov>1.047</horizontal_fov>
       <image>
         <width>640</width>
@@ -161,23 +161,13 @@
       </image>
       <clip>
         <near>0.1</near>
-        <far>100</far>
+        <far>100.0</far>
       </clip>
     </camera>
-
-    <camera name="depth">
-      <horizontal_fov>1.047</horizontal_fov>
-      <image>
-        <width>640</width>
-        <height>480</height>
-        <format>R_FLOAT32</format>    
-      </image>
-      <clip>
-        <near>0.1</near>
-        <far>10.0</far>
-      </clip>
-    </camera>
+    
   </sensor>
 </gazebo>
+
+
 
 </robot>

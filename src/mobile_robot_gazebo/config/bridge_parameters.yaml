@@ -16,11 +16,11 @@
   gz_type_name: "gz.msgs.Odometry"
   direction: GZ_TO_ROS
 
-# - ros_topic_name: "tf"
-#   gz_topic_name: "tf"
-#   ros_type_name: "tf2_msgs/msg/TFMessage"
-#   gz_type_name: "gz.msgs.Pose_V"
-#   direction: GZ_TO_ROS
+- ros_topic_name: "tf"
+  gz_topic_name: "tf"
+  ros_type_name: "tf2_msgs/msg/TFMessage"
+  gz_type_name: "gz.msgs.Pose_V"
+  direction: GZ_TO_ROS
 
 - ros_topic_name: "cmd_vel"
   gz_topic_name: "cmd_vel"
@@ -56,6 +56,17 @@
   direction: GZ_TO_ROS
   lazy: false
 
+# Point Cloud Bridge
+- ros_topic_name: "camera/points"
+  gz_topic_name: "/rgbd_camera_sensor/points"
+  ros_type_name: "sensor_msgs/msg/PointCloud2"
+  gz_type_name: "gz.msgs.PointCloudPacked"
+  direction: GZ_TO_ROS
+  qos:
+    reliability: reliable
+    durability: transient_local
+
+# RGB Image 
 - ros_topic_name: "rgb/image_raw"
   gz_topic_name: "/rgbd_camera_sensor/image"
   ros_type_name: "sensor_msgs/msg/Image"
@@ -65,6 +76,7 @@
     reliability: reliable
     durability: transient_local
 
+# RGB Camera Info
 - ros_topic_name: "rgb/camera_info"
   gz_topic_name: "/rgbd_camera_sensor/camera_info"
   ros_type_name: "sensor_msgs/msg/CameraInfo"
@@ -74,6 +86,7 @@
     reliability: reliable
     durability: transient_local
 
+# Depth Image
 - ros_topic_name: "depth/image_raw"
   gz_topic_name: "/rgbd_camera_sensor/depth_image"
   ros_type_name: "sensor_msgs/msg/Image"
@@ -83,12 +96,12 @@
     reliability: reliable
     durability: transient_local
 
+# Depth Camera Info
 - ros_topic_name: "depth/camera_info"
-  gz_topic_name: "/rgbd_camera_sensor/camera_info"
+  gz_topic_name: "/rgbd_camera_sensor/camera_info"  
   ros_type_name: "sensor_msgs/msg/CameraInfo"
   gz_type_name: "gz.msgs.CameraInfo"
   direction: GZ_TO_ROS
   qos:
     reliability: reliable
     durability: transient_local
-

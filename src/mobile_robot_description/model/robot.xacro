@@ -281,7 +281,7 @@
     <geometry>
         <box size="0.05 0.05 0.05"/>
     </geometry>
-    <material>
+    <material name="camera_black">
       <color rgba="0.1 0.1 0.1 1"/>
     </material>
   </visual>
@@ -299,14 +299,12 @@
   </inertial>
 </link>
 
+
 <!-- Joint to connect depth camera -->
 <joint name="depth_camera_joint" type="fixed">
   <parent link="camera_link"/> <!-- Attach to the regular camera -->
   <child link="depth_camera_link"/>
   <origin xyz="0 0 0.1" rpy="0 0 0"/> <!-- Slightly above the regular camera -->
 </joint>
-
-
-
 
 </robot>
