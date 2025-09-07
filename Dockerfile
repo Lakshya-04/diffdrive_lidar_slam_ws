@@ -53,6 +53,12 @@ RUN apt-get update && apt-get install -y \
     ros-jazzy-robot-localization \
     ros-jazzy-interactive-markers \
     ros-jazzy-rviz2 \
+    libpcl-dev \
+    ros-jazzy-pcl-ros \
+    ros-jazzy-pcl-conversions\
+    ros-jazzy-pcl-msgs \
+    ros-jazzy-teleop-twist-joy \
+    ros-jazzy-teleop-twist-keyboard \
     && python3 -m pip install transformations --break-system-packages \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
