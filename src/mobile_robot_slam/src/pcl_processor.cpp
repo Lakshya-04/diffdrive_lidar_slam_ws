@@ -4,191 +4,213 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
+#include <thread>
+#include <mutex>
+#include <queue>
 
-// PCL filters - COMPLETE INCLUDES
+// PCL includes (same as before)
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/passthrough.h>
 #include <pcl/filters/statistical_outlier_removal.h>
-#include <pcl/filters/radius_outlier_removal.h>
-#include <pcl/filters/crop_box.h>
-#include <pcl/filters/extract_indices.h>      // MISSING - This was the main issue!
+#include <pcl/filters/extract_indices.h>
 #include <pcl/segmentation/sac_segmentation.h>
-#include <pcl/segmentation/extract_clusters.h>
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
-#include <pcl/search/kdtree.h>                // MISSING - For clustering
-#include <pcl/common/common.h>                // MISSING - For basic operations
-#include <pcl/filters/filter.h>               // MISSING - For removeNaNFromPointCloud
+#include <pcl/search/kdtree.h>
+#include <pcl/filters/filter.h>
 
-class PCLProcessor : public rclcpp::Node
+class AsyncPCLProcessor : public rclcpp::Node
 {
 public:
-    PCLProcessor() : Node("pcl_processor")
+    AsyncPCLProcessor() : Node("async_pcl_processor"), processing_(false)
     {
-        // Subscribers for different LiDAR types
-        lidar_2d_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-            "/scan_cloud", 10, std::bind(&PCLProcessor::process2DLidar, this, std::placeholders::_1));
-        
+        // Subscribers
         lidar_3d_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-            "/points_3d", 10, std::bind(&PCLProcessor::process3DLidar, this, std::placeholders::_1));
+            "/points_3d", 10, std::bind(&AsyncPCLProcessor::cloudCallback, this, std::placeholders::_1));
         
-        rgbd_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-            "/camera/points", 10, std::bind(&PCLProcessor::processRGBD, this, std::placeholders::_1));
-
-        // Publishers for filtered clouds
-        filtered_2d_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/scan_filtered", 10);
+        // Publishers
         filtered_3d_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/points_3d_filtered", 10);
         obstacles_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/obstacles", 10);
         ground_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ground_plane", 10);
 
-        RCLCPP_INFO(this->get_logger(), "PCL Processor initialized");
+        // Timer for regular publishing at fixed rate (reduces flickering)
+        publish_timer_ = this->create_wall_timer(
+            std::chrono::milliseconds(100), // 10 Hz - smooth visualization
+            std::bind(&AsyncPCLProcessor::publishResults, this));
+
+        // Processing thread
+        processing_thread_ = std::thread(&AsyncPCLProcessor::processingLoop, this);
+
+        RCLCPP_INFO(this->get_logger(), "Async PCL Processor initialized - 10Hz output");
+    }
+
+    ~AsyncPCLProcessor()
+    {
+        stop_processing_ = true;
+        if (processing_thread_.joinable()) {
+            processing_thread_.join();
+        }
     }
 
 private:
-    // Subscribers
-    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr lidar_2d_sub_;
+    // Subscribers and Publishers
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr lidar_3d_sub_;
-    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr rgbd_sub_;
-
-    // Publishers
-    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr filtered_2d_pub_;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr filtered_3d_pub_;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr obstacles_pub_;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr ground_pub_;
+    
+    // Threading
+    std::thread processing_thread_;
+    std::atomic<bool> stop_processing_{false};
+    std::atomic<bool> processing_{false};
+    rclcpp::TimerBase::SharedPtr publish_timer_;
+    
+    // Thread-safe data storage
+    std::mutex data_mutex_;
+    std::queue<sensor_msgs::msg::PointCloud2::SharedPtr> cloud_queue_;
+    
+    // Results storage
+    std::mutex results_mutex_;
+    sensor_msgs::msg::PointCloud2 latest_filtered_;
+    sensor_msgs::msg::PointCloud2 latest_obstacles_;
+    sensor_msgs::msg::PointCloud2 latest_ground_;
+    bool has_results_{false};
 
-    void process2DLidar(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
+    void cloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
     {
-        try {
-            // Convert ROS message to PCL
-            pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
-            pcl::fromROSMsg(*msg, *cloud);
-
-            if (cloud->empty()) {
-                RCLCPP_WARN(this->get_logger(), "Received empty 2D LiDAR cloud");
-                return;
-            }
-
-            // 2D LiDAR processing pipeline
-            auto filtered_cloud = apply2DFilters(cloud);
-
-            // Convert back to ROS message and publish
-            sensor_msgs::msg::PointCloud2 output;
-            pcl::toROSMsg(*filtered_cloud, output);
-            output.header = msg->header;
-            filtered_2d_pub_->publish(output);
+        std::lock_guard<std::mutex> lock(data_mutex_);
+        
+        // Keep only the latest cloud to prevent queue buildup
+        while (!cloud_queue_.empty()) {
+            cloud_queue_.pop();
         }
-        catch (const std::exception& e) {
-            RCLCPP_ERROR(this->get_logger(), "Error processing 2D LiDAR: %s", e.what());
-        }
+        cloud_queue_.push(msg);
     }
 
-    void process3DLidar(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
+    void processingLoop()
     {
-        try {
-            // Convert ROS message to PCL
-            pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
-            pcl::fromROSMsg(*msg, *cloud);
-
-            if (cloud->empty()) {
-                RCLCPP_WARN(this->get_logger(), "Received empty 3D LiDAR cloud");
-                return;
-            }
-
-            // 3D LiDAR processing pipeline
-            auto results = apply3DFilters(cloud);
-
-            // Publish different outputs
-            publishFilteredCloud(results.filtered, filtered_3d_pub_, msg->header);
-            publishFilteredCloud(results.obstacles, obstacles_pub_, msg->header);
-            publishFilteredCloud(results.ground, ground_pub_, msg->header);
-        }
-        catch (const std::exception& e) {
-            RCLCPP_ERROR(this->get_logger(), "Error processing 3D LiDAR: %s", e.what());
-        }
-    }
-
-    void processRGBD(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
-    {
-        try {
-            // Convert ROS message to PCL with RGB
-            pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
-            pcl::fromROSMsg(*msg, *cloud);
-
-            if (cloud->empty()) {
-                RCLCPP_WARN(this->get_logger(), "Received empty RGBD cloud");
-                return;
-            }
-
-            // RGBD-specific processing
-            auto filtered_cloud = applyRGBDFilters(cloud);
+        while (!stop_processing_) {
+            sensor_msgs::msg::PointCloud2::SharedPtr msg = nullptr;
             
-            // Publish result
-            sensor_msgs::msg::PointCloud2 output;
-            pcl::toROSMsg(*filtered_cloud, output);
-            output.header = msg->header;
-            filtered_3d_pub_->publish(output);
+            {
+                std::lock_guard<std::mutex> lock(data_mutex_);
+                if (!cloud_queue_.empty()) {
+                    msg = cloud_queue_.front();
+                    cloud_queue_.pop();
+                }
+            }
+
+            if (msg && !processing_.load()) {
+                processing_.store(true);
+                
+                auto start_time = std::chrono::high_resolution_clock::now();
+                
+                // Process the cloud
+                auto results = processCloud(msg);
+                
+                auto end_time = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+                
+                // Store results thread-safely
+                {
+                    std::lock_guard<std::mutex> lock(results_mutex_);
+                    latest_filtered_ = results.filtered;
+                    latest_obstacles_ = results.obstacles;
+                    latest_ground_ = results.ground;
+                    has_results_ = true;
+                }
+                
+                RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
+                                    "Processing time: %ld ms", duration.count());
+                
+                processing_.store(false);
+            }
+            
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+    }
+
+    struct ProcessResults {
+        sensor_msgs::msg::PointCloud2 filtered;
+        sensor_msgs::msg::PointCloud2 obstacles;
+        sensor_msgs::msg::PointCloud2 ground;
+    };
+
+    ProcessResults processCloud(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
+    {
+        ProcessResults results;
+        
+        try {
+            // Convert to PCL
+            pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+            pcl::fromROSMsg(*msg, *cloud);
+
+            if (cloud->empty()) return results;
+
+            // OPTIMIZED Processing Pipeline
+            auto filter_results = applyOptimizedFilters(cloud);
+
+            // Convert back to ROS messages
+            pcl::toROSMsg(*filter_results.filtered, results.filtered);
+            pcl::toROSMsg(*filter_results.obstacles, results.obstacles);
+            pcl::toROSMsg(*filter_results.ground, results.ground);
+
+            // Set headers
+            results.filtered.header = msg->header;
+            results.obstacles.header = msg->header;
+            results.ground.header = msg->header;
         }
         catch (const std::exception& e) {
-            RCLCPP_ERROR(this->get_logger(), "Error processing RGBD: %s", e.what());
+            RCLCPP_ERROR(this->get_logger(), "Processing error: %s", e.what());
+        }
+
+        return results;
+    }
+
+    // Publish at fixed rate for smooth visualization
+    void publishResults()
+    {
+        std::lock_guard<std::mutex> lock(results_mutex_);
+        
+        if (has_results_) {
+            filtered_3d_pub_->publish(latest_filtered_);
+            obstacles_pub_->publish(latest_obstacles_);
+            ground_pub_->publish(latest_ground_);
         }
     }
 
-    // 2D LIDAR FILTERS
-    pcl::PointCloud<pcl::PointXYZ>::Ptr apply2DFilters(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)
-    {
-        pcl::PointCloud<pcl::PointXYZ>::Ptr filtered(new pcl::PointCloud<pcl::PointXYZ>);
-
-        // 1. PassThrough Filter - Remove points outside working area
-        pcl::PassThrough<pcl::PointXYZ> pass;
-        pass.setInputCloud(cloud);
-        pass.setFilterFieldName("x");
-        pass.setFilterLimits(-10.0, 10.0);  // 20m working radius
-        pass.filter(*filtered);
-
-        pass.setInputCloud(filtered);
-        pass.setFilterFieldName("y");
-        pass.setFilterLimits(-10.0, 10.0);
-        pass.filter(*filtered);
-
-        // 2. Statistical Outlier Removal - Remove noise
-        pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
-        sor.setInputCloud(filtered);
-        sor.setMeanK(20);                // Analyze 20 neighbors
-        sor.setStddevMulThresh(1.0);     // Conservative threshold
-        sor.filter(*filtered);
-
-        return filtered;
-    }
-
-    // 3D LIDAR FILTERS
+    // OPTIMIZED filtering pipeline
     struct FilterResults {
         pcl::PointCloud<pcl::PointXYZ>::Ptr filtered;
         pcl::PointCloud<pcl::PointXYZ>::Ptr obstacles;
         pcl::PointCloud<pcl::PointXYZ>::Ptr ground;
     };
 
-    FilterResults apply3DFilters(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)
+    FilterResults applyOptimizedFilters(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)
     {
         FilterResults results;
         results.filtered = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
         results.obstacles = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
         results.ground = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
 
-        // 1. Voxel Grid Downsampling - Performance optimization
+        // 1. AGGRESSIVE Downsampling first (major performance boost)
         pcl::VoxelGrid<pcl::PointXYZ> vg;
         pcl::PointCloud<pcl::PointXYZ>::Ptr downsampled(new pcl::PointCloud<pcl::PointXYZ>);
         vg.setInputCloud(cloud);
-        vg.setLeafSize(0.05f, 0.05f, 0.05f);  // 5cm resolution
+        vg.setLeafSize(0.1f, 0.1f, 0.1f);  // 10cm resolution - faster processing
         vg.filter(*downsampled);
 
-        // 2. Working Area Filter - Remove irrelevant points
-        pcl::CropBox<pcl::PointXYZ> boxFilter;
-        boxFilter.setMin(Eigen::Vector4f(-15.0, -15.0, -1.0, 1.0));  // AGV working area
-        boxFilter.setMax(Eigen::Vector4f(15.0, 15.0, 3.0, 1.0));
-        boxFilter.setInputCloud(downsampled);
-        boxFilter.filter(*results.filtered);
+        // 2. Working area filter (remove distant points early)
+        pcl::PassThrough<pcl::PointXYZ> pass;
+        pass.setInputCloud(downsampled);
+        pass.setFilterFieldName("z");
+        pass.setFilterLimits(-1.0, 3.0);  // Height limits
+        pass.filter(*results.filtered);
 
-        // 3. Ground Plane Segmentation - Critical for navigation
+        pass.setInputCloud(results.filtered);
+        pass.setFilterFieldName("x");
+        pass.setFilterLimits(-10.0, 10.0);  // Reduce working area for speed
+        pass.filter(*results.filtered);
+
+        // 3. Simple ground plane detection (optimized)
         pcl::SACSegmentation<pcl::PointXYZ> seg;
         pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
         pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
@@ -196,94 +218,36 @@ private:
         seg.setOptimizeCoefficients(true);
         seg.setModelType(pcl::SACMODEL_PLANE);
         seg.setMethodType(pcl::SAC_RANSAC);
-        seg.setMaxIterations(1000);
-        seg.setDistanceThreshold(0.1);    // 10cm threshold for ground plane
+        seg.setMaxIterations(500);  // Reduced iterations for speed
+        seg.setDistanceThreshold(0.15);  // Slightly more tolerant
 
         seg.setInputCloud(results.filtered);
         seg.segment(*inliers, *coefficients);
 
-        if (inliers->indices.empty()) {
-            RCLCPP_WARN(this->get_logger(), "Could not find ground plane in point cloud");
-            *results.obstacles = *results.filtered;  // Treat all points as obstacles
-            return results;
+        if (!inliers->indices.empty()) {
+            pcl::ExtractIndices<pcl::PointXYZ> extract;
+            extract.setInputCloud(results.filtered);
+            extract.setIndices(inliers);
+            
+            // Ground points
+            extract.setNegative(false);
+            extract.filter(*results.ground);
+            
+            // Obstacle points
+            extract.setNegative(true);
+            extract.filter(*results.obstacles);
+        } else {
+            *results.obstacles = *results.filtered;
         }
-
-        // Extract ground and obstacles - FIXED WITH PROPER INCLUDES
-        pcl::ExtractIndices<pcl::PointXYZ> extract;
-        extract.setInputCloud(results.filtered);
-        extract.setIndices(inliers);
-        
-        // Ground points
-        extract.setNegative(false);
-        extract.filter(*results.ground);
-        
-        // Obstacle points (non-ground)
-        extract.setNegative(true);
-        extract.filter(*results.obstacles);
-
-        // 4. Cluster Extraction for obstacles (optional)
-        clusterObstacles(results.obstacles);
 
         return results;
-    }
-
-    // RGBD-specific filters
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr applyRGBDFilters(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud)
-    {
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr filtered(new pcl::PointCloud<pcl::PointXYZRGB>);
-
-        // Remove NaN points common in RGBD
-        std::vector<int> indices;
-        pcl::removeNaNFromPointCloud(*cloud, *filtered, indices);
-
-        // PassThrough for depth range
-        pcl::PassThrough<pcl::PointXYZRGB> pass;
-        pass.setInputCloud(filtered);
-        pass.setFilterFieldName("z");
-        pass.setFilterLimits(0.3, 5.0);  // Useful depth range
-        pass.filter(*filtered);
-
-        return filtered;
-    }
-
-    void clusterObstacles(pcl::PointCloud<pcl::PointXYZ>::Ptr obstacles)
-    {
-        if (obstacles->empty()) return;
-
-        // Euclidean clustering for obstacle detection
-        pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
-        tree->setInputCloud(obstacles);
-
-        std::vector<pcl::PointIndices> cluster_indices;
-        pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-        ec.setClusterTolerance(0.3);   // 30cm
-        ec.setMinClusterSize(10);      // Minimum points per cluster
-        ec.setMaxClusterSize(1000);    // Maximum points per cluster
-        ec.setSearchMethod(tree);
-        ec.setInputCloud(obstacles);
-        ec.extract(cluster_indices);
-
-        RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 2000, 
-                            "Detected %zu obstacle clusters", cluster_indices.size());
-    }
-
-    void publishFilteredCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, 
-                             rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub,
-                             const std_msgs::msg::Header& header)
-    {
-        if (!cloud->empty()) {
-            sensor_msgs::msg::PointCloud2 output;
-            pcl::toROSMsg(*cloud, output);
-            output.header = header;
-            pub->publish(output);
-        }
     }
 };
 
 int main(int argc, char** argv)
 {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<PCLProcessor>());
+    rclcpp::spin(std::make_shared<AsyncPCLProcessor>());
     rclcpp::shutdown();
     return 0;
 }

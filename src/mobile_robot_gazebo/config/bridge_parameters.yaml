@@ -35,20 +35,6 @@
   direction: GZ_TO_ROS
   lazy: false
 
-- ros_topic_name: "camera"
-  gz_topic_name: "camera"
-  ros_type_name: "sensor_msgs/msg/Image"
-  gz_type_name: "gz.msgs.Image"
-  direction: GZ_TO_ROS
-  lazy: false
-
-- ros_topic_name: "camera/camera_info"
-  gz_topic_name: "camera/camera_info"
-  ros_type_name: "sensor_msgs/msg/CameraInfo"
-  gz_type_name: "gz.msgs.CameraInfo"
-  direction: GZ_TO_ROS
-  lazy: false
-
 - ros_topic_name: "imu"
   gz_topic_name: "imu"
   ros_type_name: "sensor_msgs/msg/Imu"
@@ -56,7 +42,51 @@
   direction: GZ_TO_ROS
   lazy: false
 
-# Point Cloud Bridge
+# UNIFIED RGBD Camera Topics
+- ros_topic_name: "camera/image_raw"
+  gz_topic_name: "/rgbd_camera_sensor/image"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "gz.msgs.Image"
+  direction: GZ_TO_ROS
+  qos:
+    reliability: reliable
+    durability: transient_local
+  remap:
+    frame_id: "rgbd_camera_optical_link"  # Use optical frame
+
+- ros_topic_name: "camera/camera_info"
+  gz_topic_name: "/rgbd_camera_sensor/camera_info"
+  ros_type_name: "sensor_msgs/msg/CameraInfo"
+  gz_type_name: "gz.msgs.CameraInfo"
+  direction: GZ_TO_ROS
+  qos:
+    reliability: reliable
+    durability: transient_local
+  remap:
+    frame_id: "rgbd_camera_optical_link"  # Use optical frame
+
+- ros_topic_name: "camera/depth/image_raw"
+  gz_topic_name: "/rgbd_camera_sensor/depth_image"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "gz.msgs.Image"
+  direction: GZ_TO_ROS
+  qos:
+    reliability: reliable
+    durability: transient_local
+  remap:
+    frame_id: "rgbd_camera_optical_link"  # Use optical frame
+
+- ros_topic_name: "camera/depth/camera_info"
+  gz_topic_name: "/rgbd_camera_sensor/camera_info"
+  ros_type_name: "sensor_msgs/msg/CameraInfo"
+  gz_type_name: "gz.msgs.CameraInfo"
+  direction: GZ_TO_ROS
+  qos:
+    reliability: reliable
+    durability: transient_local
+  remap:
+    frame_id: "rgbd_camera_optical_link"  # Use optical frame
+
 - ros_topic_name: "camera/points"
   gz_topic_name: "/rgbd_camera_sensor/points"
   ros_type_name: "sensor_msgs/msg/PointCloud2"
@@ -65,56 +95,20 @@
   qos:
     reliability: reliable
     durability: transient_local
+  remap:
+    frame_id: "rgbd_camera_optical_link"  # Use optical frame
 
-# RGB Image 
-- ros_topic_name: "rgb/image_raw"
-  gz_topic_name: "/rgbd_camera_sensor/image"
-  ros_type_name: "sensor_msgs/msg/Image"
-  gz_type_name: "gz.msgs.Image"
-  direction: GZ_TO_ROS
-  qos:
-    reliability: reliable
-    durability: transient_local
-
-# RGB Camera Info
-- ros_topic_name: "rgb/camera_info"
-  gz_topic_name: "/rgbd_camera_sensor/camera_info"
-  ros_type_name: "sensor_msgs/msg/CameraInfo"
-  gz_type_name: "gz.msgs.CameraInfo"
-  direction: GZ_TO_ROS
-  qos:
-    reliability: reliable
-    durability: transient_local
-
-# Depth Image
-- ros_topic_name: "depth/image_raw"
-  gz_topic_name: "/rgbd_camera_sensor/depth_image"
-  ros_type_name: "sensor_msgs/msg/Image"
-  gz_type_name: "gz.msgs.Image"
-  direction: GZ_TO_ROS
-  qos:
-    reliability: reliable
-    durability: transient_local
-
-# Depth Camera Info
-- ros_topic_name: "depth/camera_info"
-  gz_topic_name: "/rgbd_camera_sensor/camera_info"  
-  ros_type_name: "sensor_msgs/msg/CameraInfo"
-  gz_type_name: "gz.msgs.CameraInfo"
-  direction: GZ_TO_ROS
-  qos:
-    reliability: reliable
-    durability: transient_local
-
-# 3D LiDAR Point Cloud
+# 3D LiDAR Point Cloud - OPTIMIZED
 - ros_topic_name: "points_3d"
   gz_topic_name: "scan_3d/points"
   ros_type_name: "sensor_msgs/msg/PointCloud2"
   gz_type_name: "gz.msgs.PointCloudPacked"
   direction: GZ_TO_ROS
   qos:
-    reliability: reliable
-    durability: transient_local
+    reliability: best_effort  # Changed from reliable
+    durability: volatile      # Changed from transient_local
+    history: keep_last
+    depth: 1                  # Small queue
   remap:
     frame_id: "lidar_3d_link"
 

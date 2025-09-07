@@ -91,37 +91,6 @@
     </sensor>
 </gazebo>
 
-<gazebo reference="camera_link">
-    <material>
-        <ambient>0 0 1 1</ambient>
-        <diffuse>0 0 1 1</diffuse>
-        <specular>0.1 0.1 0.1 1</specular>
-    </material>
-    <sensor name="camera_sensor" type="camera">
-        <topic>camera</topic>
-        <update_rate>30.0</update_rate>
-        <camera>
-            <horizontal_fov>1.089</horizontal_fov>
-            <image>
-                <width>640</width>
-                <height>480</height>
-                <format>R8G8B8</format>
-            </image>
-            <clip>
-                <near>0.02</near>
-                <far>300</far>
-            </clip>
-            <noise>
-                <type>gaussian</type>
-                <mean>0.0</mean>
-                <stddev>0.007</stddev>
-            </noise>
-        </camera>
-        <always_on>1</always_on>
-        <visualize>true</visualize>
-        </sensor>
-</gazebo>
-
 <gazebo reference="imu_link">
     <material>
         <ambient>0 0 1 1</ambient>
@@ -145,7 +114,8 @@
     </sensor>
 </gazebo>
 
-<gazebo reference="depth_camera_link">
+<!-- UNIFIED RGBD Camera Sensor -->
+<gazebo reference="rgbd_camera_link">
   <sensor name="rgbd_camera_sensor" type="rgbd_camera">
     <always_on>true</always_on>
     <update_rate>30.0</update_rate>
@@ -153,7 +123,7 @@
     <topic>rgbd_camera_sensor</topic>
     
     <camera name="camera">
-      <horizontal_fov>1.047</horizontal_fov>
+      <horizontal_fov>1.047</horizontal_fov>  <!-- 60 degrees -->
       <image>
         <width>640</width>
         <height>480</height>
@@ -165,6 +135,13 @@
       </clip>
     </camera>
     
+    <!-- Depth camera settings -->
+    <depth_camera>
+      <clip>
+        <near>0.1</near>
+        <far>10.0</far>
+      </clip>
+    </depth_camera>
   </sensor>
 </gazebo>
 

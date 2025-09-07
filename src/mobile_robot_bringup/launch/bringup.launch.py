@@ -118,14 +118,23 @@ def generate_launch_description():
     )
 
     # Static transforms for different sensors
-    depth_camera_tf_node = Node(
+    rgbd_camera_tf_node = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
-        name='depth_camera_tf',
+        name='rgbd_camera_tf',
         arguments=['0', '0', '0', '0', '0', '0', 
-                  'depth_camera_link', 'diff_drive_robot/base_footprint/rgbd_camera_sensor'],
-        output='screen',
-        condition=IfCondition(LaunchConfiguration('use_rgbd'))
+                'rgbd_camera_link', 'diff_drive_robot/base_footprint/rgbd_camera_sensor'],
+        output='screen'
+    )
+
+    # ADDITIONAL: Add optical frame transform
+    rgbd_camera_optical_tf_node = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='rgbd_camera_optical_tf', 
+        arguments=['0', '0', '0', '-1.5708', '0', '-1.5708',
+                'rgbd_camera_link', 'rgbd_camera_optical_link'],
+        output='screen'
     )
 
     # RViz configurations - select config based on lidar_type
@@ -199,7 +208,8 @@ def generate_launch_description():
         bridge_node,
         ekf_node,
         frame_fix_node,
-        depth_camera_tf_node,
+        rgbd_camera_tf_node,
+        rgbd_camera_optical_tf_node,
         lidar_3d_tf_node,
         odom_to_path_node,
         rviz2_node_2d,

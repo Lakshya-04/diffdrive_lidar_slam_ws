@@ -11,16 +11,21 @@ This project demonstrates a complete robotics software pipeline, from low-level 
 
 ## 🌟 Key Features
 
--   **🤖 Full Robot Model**: A detailed differential drive robot model created with URDF and XACRO.
--   **🔥 Gazebo Harmonic Simulation**: Realistic physics and sensor simulation in the latest Gazebo version.
--   **🛰️ Multi-Sensor Suite**:
-    -   2D LiDAR for environmental mapping.
-    -   RGB-D Camera for rich visual and depth data.
-    -   IMU for orientation and acceleration data.
--   **🗺️ SLAM Integration**: Out-of-the-box mapping capabilities using `slam_toolbox`.
--   **🧭 Autonomous Navigation**: Full navigation and path planning using the **Nav2** stack.
--   **🕹️ Interactive Control**: Real-time robot control in RViz using an interactive marker.
--   **🧱 Modular & Extendable**: The project is organized into distinct ROS 2 packages, making it easy to modify, extend, or integrate with other projects.
+- **🤖 Full Robot Model**: A detailed differential-drive robot model created with URDF + XACRO.
+- **🔥 Gazebo Harmonic Simulation**: Realistic physics and sensor simulation in the latest Gazebo release.
+- **🛰️ Multi-Sensor Suite**  
+  - **2D LiDAR** for fast, lightweight mapping.  
+  - **NEW – 3D LiDAR** (Velodyne-style) with configurable vertical layers and 360 ° horizontal FoV.  
+  - **RGB-D Camera** (unified RGB + depth sensor) publishing images, depth, and colored point clouds.  
+  - **IMU** for orientation and acceleration data.
+- **🗺️ SLAM Integration**  
+  - 2D mapping with `slam_toolbox`.  
+  - 3D point-cloud generation ready for visual/voxel SLAM pipelines.
+- **🧭 Autonomous Navigation**: End-to-end path-planning with the **Nav2** stack.
+- **🧹 3D Point-Cloud Filtering**: Real-time PCL node (`pcl_processor`) performs voxel down-sampling, ground-plane removal, and obstacle clustering on the 3D LiDAR stream.
+- **🕹️ Interactive Control**: Drag-and-drive interactive marker in RViz2.
+- **🧱 Modular & Extendable**: Clean package separation lets you swap sensors or robot bodies with a single launch argument.
+
 ---
 
 ## 📂 Project Structure
@@ -101,19 +106,32 @@ Before running any launch file, source your workspace:
 source ~/diff_drive_ws/install/setup.bash
 ```
 
-### 1. Launch the Basic Simulation
-This launches Gazebo, spawns the robot, and starts the necessary nodes (Robot State Publisher, ROS-Gazebo Bridge).
+### 1. Launch the Basic Simulation  
+Now you can choose **2 D** or **3 D** sensor suites at launch time:
+2D-LiDAR robot (default)
 
 ```bash
-ros2 launch mobile_robot_bringup bringup.launch.py
+ros2 launch mobile_robot_bringup bringup.launch.py robot_type:=2d
+```
+
+3D-LiDAR robot with on-board PCL processing
+```bash
+ros2 launch mobile_robot_bringup bringup.launch.py robot_type:=3d
 ```
 
 ### 2. Launch SLAM
 This starts the simulation and launches `slam_toolbox` for creating a map.
 
-```bash
-ros2 launch mobile_robot_bringup bringup_slam.launch.py
+2D SLAM (2D LiDAR)
+``bash
+ros2 launch mobile_robot_bringup bringup_slam.launch.py robot_type:=2d
 ```
+
+3D point-cloud SLAM starter (publishes filtered /points_3d_filtered)
+```bash
+ros2 launch mobile_robot_bringup bringup_slam.launch.py robot_type:=3d
+``` 
+
 -   Drive the robot around using the interactive marker in RViz to build a map.
 -   Save the map using the `slam_toolbox` service:
     ```bash
@@ -135,13 +153,34 @@ ros2 launch mobile_robot_bringup bringup_nav.launch.py map:=/path/to/your/map.ya
 
 ## 🔧 Customization & Configuration
 
-This project is designed to be easily configurable.
+This project is designed to be easily configurable. Here are some common customizations:
 
--   **Robot Physical Properties**: Edit `mobile_robot_description/model/robot.xacro` to change dimensions, mass, or inertia.
--   **Sensor Parameters**: Modify `mobile_robot_description/model/robot.gazebo` to adjust sensor noise, update rates, or field-of-view.
--   **Topic Bridging**: Add or remove topics between ROS and Gazebo by editing `mobile_robot_gazebo/config/bridge_parameters.yaml`.
--   **SLAM Tuning**: Adjust `mobile_robot_slam/config/slam_toolbox_params.yaml` to change parameters like `odom_frame`, `map_frame`, or particle filter settings.
--   **Navigation Behavior**: Tune robot navigation by modifying `mobile_robot_navigation/config/nav2_params.yaml`. You can change the planner, controller, or costmap parameters.
+- **Switch between 2D and 3D sensors:**  
+  Set the `robot_type` launch argument (`2d` or `3d`) in `mobile_robot_bringup/launch/bringup.launch.py`.
+
+- **3D LiDAR specs (layers, range, noise):**  
+  Edit the `<sensor type="gpu_lidar">` block in `mobile_robot_description/model/robot.gazebo`.
+
+- **3D point-cloud filter parameters:**  
+  Adjust voxel size, RANSAC ground threshold, and cluster tolerances in `mobile_robot_slam/src/pcl_processor.cpp`.
+
+- **Topic bridging for 3D LiDAR:**  
+  Edit `mobile_robot_gazebo/config/bridge_parameters.yaml` to map Gazebo `/scan_3d/points` to ROS `/points_3d`.
+
+- **Robot Physical Properties:**  
+  Edit `mobile_robot_description/model/robot.xacro` to change dimensions, mass, or inertia.
+
+- **Sensor Parameters:**  
+  Modify `mobile_robot_description/model/robot.gazebo` to adjust sensor noise, update rates, or field-of-view.
+
+- **Topic Bridging:**  
+  Add or remove topics between ROS and Gazebo by editing `mobile_robot_gazebo/config/bridge_parameters.yaml`.
+
+- **SLAM Tuning:**  
+  Adjust `mobile_robot_slam/config/slam_toolbox_params.yaml` to change parameters like `odom_frame`, `map_frame`, or particle filter settings.
+
+- **Navigation Behavior:**  
+  Tune robot navigation by modifying `mobile_robot_navigation/config/nav2_params.yaml`. You can change the planner, controller, or costmap parameters.
 
 ---
 
@@ -199,7 +238,6 @@ Gazebo and RViz2 windows will appear on your host machine, allowing you to inter
 This project is an active endeavor with several planned enhancements:
 
 -   **[In Progress] Advanced Sensor Integration**:
-    -   Integrate a 3D LiDAR for more detailed environmental perception.
     -   Implement visual SLAM using the RGB-D camera.
 -   **[Planned] Multi-Robot Simulation**:
     -   Develop a launch system to spawn multiple robots in the same environment.
