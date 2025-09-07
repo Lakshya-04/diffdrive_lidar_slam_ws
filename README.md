@@ -123,11 +123,13 @@ ros2 launch mobile_robot_bringup bringup.launch.py robot_type:=3d
 This starts the simulation and launches `slam_toolbox` for creating a map.
 
 2D SLAM (2D LiDAR)
-``bash
+
+```bash
 ros2 launch mobile_robot_bringup bringup_slam.launch.py robot_type:=2d
 ```
 
 3D point-cloud SLAM starter (publishes filtered /points_3d_filtered)
+
 ```bash
 ros2 launch mobile_robot_bringup bringup_slam.launch.py robot_type:=3d
 ``` 
@@ -187,10 +189,6 @@ This project is designed to be easily configurable. Here are some common customi
 ## 🐳 Docker Deployment
 
 For a consistent and hassle-free setup, you can use the provided `Dockerfile` to build and run the entire simulation in a container. This method handles all dependencies and configurations automatically.
-
-Installing docker
-huh@huh-Legion-5-15IMH6:~/diff_drive_ws$ sudo usermod -aG docker ${USER}
-huh@huh-Legion-5-15IMH6:~/diff_drive_ws$ newgrp docker
 
 ### 1. Build the Docker Image
 
