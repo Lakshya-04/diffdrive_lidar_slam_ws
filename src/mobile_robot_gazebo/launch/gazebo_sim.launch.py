@@ -10,7 +10,7 @@ def generate_launch_description():
     # Declare arguments
     world_arg = DeclareLaunchArgument(
         'world',
-        default_value='empty.sdf',
+        default_value='ground.sdf',
         description='World file name (without path, must exist in worlds/ folder)'
     )
     
@@ -18,7 +18,7 @@ def generate_launch_description():
         'verbose',
         default_value='false',
         description='Set to true for verbose output'
-    )
+    )   
     
     gui_arg = DeclareLaunchArgument(
         'gui',

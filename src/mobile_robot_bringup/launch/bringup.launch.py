@@ -40,7 +40,8 @@ def generate_launch_description():
     
     bridge_params_path = os.path.join(gazebo_pkg, 'config', 'bridge_parameters.yaml')
     ekf_params_path = os.path.join(bringup_pkg, 'config', 'ekf.yaml')
-    rviz_config_path = os.path.join(bringup_pkg, 'config', 'mobile_robot_depth.rviz')
+    # rviz_config_path = os.path.join(bringup_pkg, 'config', 'mobile_robot_depth.rviz')
+    rviz_config_path = os.path.join(bringup_pkg, 'config', 'mobile_robot_2dlidar.rviz')
     
     # World file path - correctly reference the gazebo package
     world_file = PathJoinSubstitution([gazebo_pkg, 'worlds', LaunchConfiguration('world')])

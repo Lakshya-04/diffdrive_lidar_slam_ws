@@ -33,26 +33,26 @@ slam_toolbox:
     max_laser_range: 20.0
     minimum_time_interval: 0.5
     transform_publish_period: 0.02
-    map_update_interval: 5.0
+    map_update_interval: 1.0
 
     # Scan matching
     use_scan_matching: true
-    use_scan_barycenter: true
-    minimum_travel_distance: 0.5  # meters
-    minimum_travel_heading: 0.5   # radians
+    use_scan_barycenter: false
+    minimum_travel_distance: 0.1  # meters
+    minimum_travel_heading: 0.1   # radians
 
     # Loop closure
     do_loop_closing: true
-    loop_search_maximum_distance: 3.0
+    loop_search_maximum_distance: 1.5
     loop_match_minimum_chain_size: 10
     loop_match_maximum_variance_coarse: 3.0
     loop_match_minimum_response_coarse: 0.35
     loop_match_minimum_response_fine: 0.45
 
     # Correlation parameters
-    correlation_search_space_dimension: 0.5
-    correlation_search_space_resolution: 0.01
-    correlation_search_space_smear_deviation: 0.1
+    correlation_search_space_dimension: 0.25
+    correlation_search_space_resolution: 0.005
+    correlation_search_space_smear_deviation: 0.05
 
     # Advanced parameters (usually don't need to change)
     stack_size_to_use: 40000000
