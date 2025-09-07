@@ -178,6 +178,15 @@ def generate_launch_description():
         output='screen'
     )
 
+    # PCL Processing Node
+    pcl_processor_node = Node(
+        package='mobile_robot_slam',
+        executable='pcl_processor',
+        name='pcl_processor',
+        output='screen',
+        parameters=[{'use_sim_time': True}]
+    )
+
     return LaunchDescription([
         world_arg,
         lidar_type_arg,
@@ -196,5 +205,6 @@ def generate_launch_description():
         rviz2_node_2d,
         rviz2_node_3d,
         rviz2_node_depth,
-        interactive_marker_twist_node
+        interactive_marker_twist_node,
+        pcl_processor_node
     ])
